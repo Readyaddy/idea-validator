@@ -2,7 +2,11 @@
 backend/venv/
 backend/.env
 backend/__pycache__/
+backend/**/__pycache__/
 backend/*.pyc
+backend/*.db
+backend/error.txt
+backend/error.log
 
 # Frontend
 frontend/node_modules/
