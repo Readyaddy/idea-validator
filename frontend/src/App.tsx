@@ -89,6 +89,8 @@ function App() {
           state={state}
           nodeHistory={nodeHistory}
           isExecuting={isExecuting}
+          onShowHistory={() => setStage('history')}
+          onNewIdea={goToInput}
         />
       )}
       {stage === 'history' && (

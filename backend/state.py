@@ -1,6 +1,12 @@
 import operator
 from typing import TypedDict, Annotated, List, Dict, Any
 
+
+def merge_dicts(a: dict, b: dict) -> dict:
+    """Reducer that merges two dicts together (b overwrites a on key collision)."""
+    return {**a, **b}
+
+
 class AgentState(TypedDict):
     # Phase 1
     raw_input: str
@@ -30,3 +36,6 @@ class AgentState(TypedDict):
     decision: str
     golden_features: List[str]
     unmitigated_risks: List[str]
+
+    # Summaries (merged across agents)
+    summaries: Annotated[Dict[str, str], merge_dicts]

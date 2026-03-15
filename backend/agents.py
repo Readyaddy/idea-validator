@@ -26,6 +26,20 @@ def get_llm(temperature=0.7):
     return ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=temperature)
 
 
+def generate_summary(content: str) -> str:
+    """Generate a concise 1-2 sentence executive summary of an agent's output."""
+    try:
+        llm = get_llm(0.2)
+        res = llm.invoke(
+            f"Summarize the following analysis in exactly 1-2 concise sentences. "
+            f"Be direct, specific, and capture the single most important takeaway. "
+            f"No preamble, no labels, just the summary:\n\n{content[:3000]}"
+        )
+        return res.content.strip()
+    except Exception:
+        return ""
+
+
 # ─── Phase 1: Inception & Alignment ────────────────────────────────────────────
 
 class VisionQuestions(BaseModel):
@@ -46,7 +60,8 @@ def idea_expander(state: AgentState):
     ans = state.get("vision_answers", [])
     prompt = ie_prompt.build_prompt(raw_prompt, qs, ans)
     res = get_llm().invoke(prompt)
-    return {"v1_concept": res.content}
+    summary = generate_summary(res.content)
+    return {"v1_concept": res.content, "summaries": {"idea_expander": summary}}
 
 
 # ─── Phase 2: Data & Market Engine ─────────────────────────────────────────────
@@ -65,21 +80,24 @@ def data_gatherer(state: AgentState):
         search_results = "Search unavailable right now."
     prompt = dg_prompt.build_prompt(concept, search_results)
     res = get_llm().invoke(prompt)
-    return {"competitor_matrix": res.content}
+    summary = generate_summary(res.content)
+    return {"competitor_matrix": res.content, "summaries": {"data_gatherer": summary}}
 
 
 def market_analyst(state: AgentState):
     concept = state.get("v1_concept", "")
     prompt = ma_prompt.build_prompt(concept)
     res = get_llm().invoke(prompt)
-    return {"market_trend_report": res.content}
+    summary = generate_summary(res.content)
+    return {"market_trend_report": res.content, "summaries": {"market_analyst": summary}}
 
 
 def historian_researcher(state: AgentState):
     concept = state.get("v1_concept", "")
     prompt = hr_prompt.build_prompt(concept)
     res = get_llm().invoke(prompt)
-    return {"graveyard_lessons": res.content}
+    summary = generate_summary(res.content)
+    return {"graveyard_lessons": res.content, "summaries": {"historian_researcher": summary}}
 
 
 def the_scoper(state: AgentState):
@@ -87,14 +105,16 @@ def the_scoper(state: AgentState):
     matrix = state.get("competitor_matrix", "")
     prompt = ts_prompt.build_prompt(concept, matrix)
     res = get_llm().invoke(prompt)
-    return {"mvp_scope": res.content}
+    summary = generate_summary(res.content)
+    return {"mvp_scope": res.content, "summaries": {"the_scoper": summary}}
 
 
 def cfo_calculator(state: AgentState):
     mvp = state.get("mvp_scope", state.get("v1_concept", ""))
     prompt = cfo_prompt.build_prompt(mvp)
     res = get_llm().invoke(prompt)
-    return {"unit_economics": res.content}
+    summary = generate_summary(res.content)
+    return {"unit_economics": res.content, "summaries": {"cfo_calculator": summary}}
 
 
 # ─── Phase 3: Stakeholder Reality Check ────────────────────────────────────────
@@ -104,7 +124,8 @@ def target_user(state: AgentState):
     matrix = state.get("competitor_matrix", "")
     prompt = tu_prompt.build_prompt(mvp, matrix)
     res = get_llm().invoke(prompt)
-    return {"ux_friction_report": res.content}
+    summary = generate_summary(res.content)
+    return {"ux_friction_report": res.content, "summaries": {"target_user": summary}}
 
 
 def seed_investor(state: AgentState):
@@ -113,7 +134,8 @@ def seed_investor(state: AgentState):
     econ = state.get("unit_economics", "")
     prompt = si_prompt.build_prompt(mvp, market, econ)
     res = get_llm().invoke(prompt)
-    return {"investment_report": res.content}
+    summary = generate_summary(res.content)
+    return {"investment_report": res.content, "summaries": {"seed_investor": summary}}
 
 
 def growth_strategist(state: AgentState):
@@ -121,14 +143,16 @@ def growth_strategist(state: AgentState):
     ux = state.get("ux_friction_report", "")
     prompt = gs_prompt.build_prompt(econ, ux)
     res = get_llm().invoke(prompt)
-    return {"distribution_plan": res.content}
+    summary = generate_summary(res.content)
+    return {"distribution_plan": res.content, "summaries": {"growth_strategist": summary}}
 
 
 def compliance_officer(state: AgentState):
     mvp = state.get("mvp_scope", "")
     prompt = co_prompt.build_prompt(mvp)
     res = get_llm().invoke(prompt)
-    return {"compliance_report": res.content}
+    summary = generate_summary(res.content)
+    return {"compliance_report": res.content, "summaries": {"compliance_officer": summary}}
 
 
 # ─── Phase 4: The Crucible (MAD Loop) ──────────────────────────────────────────
@@ -141,7 +165,8 @@ def devils_advocate(state: AgentState):
     prompt = da_prompt.build_prompt(graveyard, ux, inv, comp)
     res = get_llm().invoke(prompt)
     loop_count = state.get("loop_count", 0) + 1
-    return {"attack_vector": res.content, "loop_count": loop_count}
+    summary = generate_summary(res.content)
+    return {"attack_vector": res.content, "loop_count": loop_count, "summaries": {"devils_advocate": summary}}
 
 
 def validator_optimist(state: AgentState):
@@ -149,7 +174,8 @@ def validator_optimist(state: AgentState):
     attack = state.get("attack_vector", "")
     prompt = vo_prompt.build_prompt(concept, attack)
     res = get_llm().invoke(prompt)
-    return {"v1_concept": res.content}
+    summary = generate_summary(res.content)
+    return {"v1_concept": res.content, "summaries": {"validator_optimist": summary}}
 
 
 # ─── Phase 5: Synthesis & Execution ────────────────────────────────────────────
@@ -164,7 +190,8 @@ def the_refiner(state: AgentState):
     concept = state.get("v1_concept", "")
     prompt = tr_prompt.build_prompt(concept)
     res = get_llm().invoke(prompt)
-    return {"prd": res.content}
+    summary = generate_summary(res.content)
+    return {"prd": res.content, "summaries": {"the_refiner": summary}}
 
 
 def the_judge(state: AgentState):
