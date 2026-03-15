@@ -11,6 +11,14 @@ Idea Validator is a full-stack application that runs your startup idea through a
 
 ---
 
+## 🎥 Demo
+
+Watch the Idea Validator pipeline in action, featuring the phase-grouped Execution Engine, agent-attributed concept documents, and the MAD Loop adversarial dashboard.
+
+![Idea Validator UI Demo](assets/demo.webp)
+
+---
+
 ## ✨ Features
 
 - **15 Specialized AI Agents** — Each with expert-level prompts, unique personas, and structured output schemas
