@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import InputPhase from './components/InputPhase';
 import QuestionPhase from './components/QuestionPhase';
 import Dashboard from './components/Dashboard';
@@ -18,11 +18,11 @@ function App() {
     setThreadId(Math.random().toString(36).substring(7));
   }, []);
 
-  const startValidation = (idea: string) => {
+  const startValidation = (idea: string, apiKey: string) => {
     const socket = new WebSocket(`ws://localhost:8000/ws/${threadId}`);
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ action: "start", raw_input: idea }));
+      socket.send(JSON.stringify({ action: "start", raw_input: idea, api_key: apiKey }));
       setWs(socket);
       setStage('dashboard');
       setIsExecuting(true);

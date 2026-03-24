@@ -8,6 +8,9 @@ def merge_dicts(a: dict, b: dict) -> dict:
 
 
 class AgentState(TypedDict):
+    # Config
+    api_key: str
+
     # Phase 1
     raw_input: str
     vision_questions: List[str]

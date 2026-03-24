@@ -64,7 +64,8 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
             
             if action == "start":
                 raw_input = payload.get("raw_input")
-                state_update = {"raw_input": raw_input}
+                api_key = payload.get("api_key", "")
+                state_update = {"raw_input": raw_input, "api_key": api_key}
                 
                 # Persist: create session in database
                 db.create_session(thread_id, raw_input)
@@ -74,12 +75,17 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
                         # event is {node_name: state_diff}
                         node_name = list(event.keys())[0]
                         state_diff = event[node_name]
-                        
-                        # Persist: save state after each node completes
-                        db.update_session_state(thread_id, state_diff, node_name)
-                        
+
+                        # Persist: save state after each node completes (strip api_key)
+                        if isinstance(state_diff, dict):
+                            db_diff = {k: v for k, v in state_diff.items() if k != "api_key"}
+                            db.update_session_state(thread_id, db_diff, node_name)
+
                         await websocket.send_text(json.dumps({"type": "update", "data": event}))
                 except Exception as e:
+                    import traceback
+                    with open('last_error.txt', 'w') as f:
+                        f.write(traceback.format_exc())
                     db.fail_session(thread_id)
                     await websocket.send_text(json.dumps({"type": "error", "message": f"Graph error: {str(e)}"}))
                 
@@ -106,12 +112,17 @@ async def websocket_endpoint(websocket: WebSocket, thread_id: str):
                     async for event in graph.astream(None, config, stream_mode="updates"):
                         node_name = list(event.keys())[0]
                         state_diff = event[node_name]
-                        
-                        # Persist: save state after each node completes
-                        db.update_session_state(thread_id, state_diff, node_name)
-                        
+
+                        # Persist: save state after each node completes (strip api_key)
+                        if isinstance(state_diff, dict):
+                            db_diff = {k: v for k, v in state_diff.items() if k != "api_key"}
+                            db.update_session_state(thread_id, db_diff, node_name)
+
                         await websocket.send_text(json.dumps({"type": "update", "data": event}))
                 except Exception as e:
+                    import traceback
+                    with open('last_error.txt', 'w') as f:
+                        f.write(traceback.format_exc())
                     db.fail_session(thread_id)
                     await websocket.send_text(json.dumps({"type": "error", "message": f"Graph error: {str(e)}"}))
                 
